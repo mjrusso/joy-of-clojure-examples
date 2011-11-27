@@ -303,3 +303,34 @@ schedule
 (seq (hash-map :a 1, :b 2, :c 3))
 
 (seq (array-map :a 1, :b 2, :c 3))
+
+(defn index [coll]
+  (cond
+   (map? coll) (seq coll)
+   (set? coll) (map vector coll coll)
+   :else (map vector (iterate inc 0) coll)))
+
+(seq {:a :b, :c :d})
+(seq #{1 2 3 4})
+(map vector #{1 2 3 4})
+(map vector #{1 2 3 4} #{1 2 3 4})
+(map vector (iterate inc 0) #{1 2 3 4})
+
+(index [:a 1 :b 2 :c 3 :d 4])
+(index {:a 1 :b 2 :c 3 :d 4})
+(index #{:a 1 :b 2 :c 3 :d 4})
+
+(defn pos [e coll]
+  (for [[i v] (index coll) :when (= e v)] i))
+
+(pos 3 [:a 1 :b 2 :c 3 :d 4])
+(pos 3 {:a 1, :b 2, :c 3, :d 4})
+(pos 3 [:a 3 :b 3 :c 3 :d 4])
+(pos 3 {:a 3, :b 3, :c 3, :d 4})
+
+(defn pos [pred coll]
+  (for [[i v] (index coll) :when (pred v)] i))
+
+(pos even? [2 3 6 7])
+(pos #{3 4} {:a 1 :b 2 :c 3 :d 4})
+(pos #{3} [:a 1 :b 2 :c 3 :d 4])
