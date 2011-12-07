@@ -1,6 +1,6 @@
 # Joy Of Clojure Examples
 
-This repository includes sample code from
+This repository includes sample code (and notes) from
 [The Joy of Clojure][joy-of-clojure], and serves as a companion to the
 book. This repository exists because I find that typing the book's
 examples into a file and executing the resultant forms via SLIME is
