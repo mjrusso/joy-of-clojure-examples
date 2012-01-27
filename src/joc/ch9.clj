@@ -77,7 +77,8 @@ bonobo/x
   (:import (java.util Date)
            (java.io File)))
 
-                  ; clojure multimethods and the universal design pattern
+                  ; clojure multimethods and the universal design
+                  ; pattern (UDP)
 
 
 (ns joy.udp
@@ -85,4 +86,119 @@ bonobo/x
 
 (defn beget [o p] (assoc o ::prototype p))
 (beget {:sub 0} {:super 1})
+
 (def put assoc)
+
+;; follows the prototype chain until the end
+(defn get [m k]
+  (when m
+    (if-let [[_ v] (find m k)]
+      v
+      (recur (::prototype m) k))))
+
+;; find allows us to distinguish between 'nil' and 'not found'
+(doc find)
+(find {:a 1, :c 3} :a)
+(:a {:a 1, :c 3})
+(:z {:a 1, :c 3})
+(find {:a 1, :c 3} :z)
+(find {:a nil, :c 3} :a)
+
+(get (beget {:sub 0} {:super 1})
+     :super)
+
+(def cat {:likes-dogs true, :ocd-bathing true})
+(def morris (beget {:likes-9lives true} cat))
+(def post-traumatic-morris (beget {:likes-dogs nil} morris))
+
+(get cat :likes-dogs)
+(get morris :likes-dogs)
+(get post-traumatic-morris :likes-dogs)
+
+;; bring on the multimethods...
+
+;; define a multimethod `compiler` that dispatches on key :os
+(defmulti compiler :os)
+(defmethod compiler ::unix [m] (get m :c-compiler))
+(defmethod compiler ::osx  [m] (get m :c-compiler))
+
+;; if the function compieler is called with a prototype map, then the
+;; map is queried for an element :os, which has methods defined on
+;; the results for either ::unix or ::osx
+
+(def clone (partial beget {}))
+(def unix {:os ::unix, :c-compiler "cc", :home "/home", :dev "/dev"})
+(def osx (-> (clone unix)
+             (put :os ::osx)
+             (put :c-compiler "gcc")
+             (put :home "/Users")))
+
+(compiler unix)
+(compiler osx)
+
+(defmulti home :os)
+(defmethod home ::unix [m] (get m :home))
+
+(home unix)
+;; (home osx)
+
+;; "::osx is a ::unix"
+(derive ::osx ::unix)
+
+(home osx)
+
+(parents ::osx)
+(ancestors ::osx)
+(descendants ::unix)
+(ancestors ::unix)
+(isa? ::osx ::unix)
+(isa? ::unix ::osx)
+
+(derive ::osx ::bsd)
+(defmethod home ::bsd [m] "/home")
+
+;; (home osx)
+
+(prefer-method home ::unix ::bsd)
+(home osx)
+
+(remove-method home ::bsd)
+(home osx)
+
+(derive (make-hierarchy) ::osx ::unix)
+
+;; sidebar: the 'juxt' function
+;; juxt takes a number of functions and composes them into a function
+;; returning a vector of its argument(s) applied to each given
+;; function
+(def each-math (juxt + * - /))
+(each-math 2 3)
+((juxt take drop) 3 (range 9))
+
+;; juxt is very useful for defining multimethod dispatch functions
+
+;; multimethods are fully open and can dispatch on the results of an
+;; arbitrary function
+
+(defmulti compile-cmd (juxt :os compiler))
+
+(defmethod compile-cmd [::osx "gcc"] [m]
+  (str "/usr/bin/" (get m :c-compiler)))
+
+(defmethod compile-cmd :default [m]
+  (str "Unsure where to locate " (get m :c-compiler)))
+
+(compile-cmd osx)
+
+((juxt :os compiler) osx)
+
+(compile-cmd unix)
+
+;; clojure also provides a simpler model of rcreating abstractions and
+;; gaining the benefits of polymorphism: types, protocols, records.
+;; multimethods not always ideal: speed, and dispatching on an
+;; arbitrary function is often overkill.
+
+
+
+
