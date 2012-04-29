@@ -199,6 +199,6 @@ bonobo/x
 ;; multimethods not always ideal: speed, and dispatching on an
 ;; arbitrary function is often overkill.
 
-
+;; TODO return back to this chapter; currently on page 189
 
 
